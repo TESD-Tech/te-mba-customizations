@@ -1,0 +1,22 @@
+{
+  "name": "te-mba-customizations",
+  "version": "23.5.3",
+  "description": "TESD MBA Customizations",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TESD-Tech/te-mba-customizations.git"
+  },
+  "author": "Benjamin Kemp",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TESD-Tech/te-mba-customizations/issues"
+  },
+  "homepage": "https://github.com/TESD-Tech/te-mba-customizations#readme",
+  "dependencies": {
+    "@tesd-tech/ps-package": "^23.4.4"
+  }
+}

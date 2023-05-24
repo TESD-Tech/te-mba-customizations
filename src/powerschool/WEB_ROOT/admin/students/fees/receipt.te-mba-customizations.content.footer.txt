@@ -1,0 +1,3 @@
+<!-- START receipt.te-mba-customizations.content.footer.txt -->
+HI!!!  This is a test of the customizations for the receipt page.
+<!-- END receipt.te-mba-customizations.content.footer.txt -->
