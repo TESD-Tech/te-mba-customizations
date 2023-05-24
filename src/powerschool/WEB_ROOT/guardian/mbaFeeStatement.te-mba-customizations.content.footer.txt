@@ -1,3 +1,2 @@
 <!-- START mbaFeeStatement.te-mba-customizations.content.footer.txt -->
-Testing 123
 <!-- END mbaFeeStatement.te-mba-customizations.content.footer.txt -->
