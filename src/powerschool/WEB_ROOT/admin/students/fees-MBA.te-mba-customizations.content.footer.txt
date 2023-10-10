@@ -1,0 +1,187 @@
+<!-- BEGIN fees-MBA.te-mba-customizations.content.footer.txt -->
+
+<style type="text/css">
+	#family_computer_use_fee td {
+		text-align: center;
+	}
+</style>
+
+<table id="family_computer_use_fee" class="grid" style="margin-top: 12px;">
+	<thead>
+		<tr>
+			<th>Family ID</th>
+			<th>School</th>
+			<th>Student Number</th>
+			<th>Student</th>
+			<th>Amount</th>
+      <th>Waived</th>
+			<th>Paid</th>
+			<th>Due</th>
+			<th>Running Total</th>
+			<th>BYOD</th>
+		</tr>
+	</thead>
+	<tbody>
+~[tlist_sql;
+WITH FamilyCTE AS (
+    SELECT DISTINCT
+        studentcontactassoc.PERSONID,
+        MIN(students.STUDENT_NUMBER) OVER (PARTITION BY studentcontactassoc.PERSONID) AS MinStudentNumber
+    FROM students
+	    INNER JOIN STUDENTCONTACTASSOC ON STUDENTCONTACTASSOC.STUDENTDCID = students.dcid
+	    INNER JOIN STUDENTCONTACTDETAIL ON STUDENTCONTACTDETAIL.STUDENTCONTACTASSOCID = STUDENTCONTACTASSOC.STUDENTCONTACTASSOCID
+	        AND STUDENTCONTACTDETAIL.ISCUSTODIAL = 1
+    WHERE students.schoolid < 5000
+        AND students.enroll_status IN (-1, 0)
+), familyIDs AS (
+	SELECT
+	    students.person_id,
+	    fcte.PERSONID,
+	    DENSE_RANK() OVER (ORDER BY fcte.MinStudentNumber) AS FAMILYID
+	FROM students
+		INNER JOIN STUDENTCONTACTASSOC ON STUDENTCONTACTASSOC.STUDENTDCID = students.dcid
+		INNER JOIN STUDENTCONTACTDETAIL ON STUDENTCONTACTDETAIL.STUDENTCONTACTASSOCID = STUDENTCONTACTASSOC.STUDENTCONTACTASSOCID
+		    AND STUDENTCONTACTDETAIL.ISCUSTODIAL = 1
+		INNER JOIN FamilyCTE fcte ON studentcontactassoc.PERSONID = fcte.PERSONID
+	WHERE students.schoolid < 5000
+	    AND students.enroll_status IN (-1, 0)
+	
+	ORDER BY students.STUDENT_NUMBER, fcte.personid
+), family_ident AS (
+	SELECT familyIDs.person_id
+	, MIN( familyIDs.familyID ) familyID
+
+FROM familyIDs
+
+GROUP BY familyIDs.person_id
+
+ORDER BY 2
+),
+this_family AS (
+	SELECT family_ident.familyID
+	FROM FAMILY_IDENT
+		INNER JOIN students ON students.student_number = ~([STUDENTS]student_number)
+			AND students.person_id = family_ident.person_id
+),
+family_fee AS (
+  SELECT family_ident.familyID
+    , CASE WHEN U_DEF_EXT_STUDENTS.BYOD = 1 
+      OR COALESCE( U_STUDENT_FEE.waived, 0 ) = 1 
+      THEN 0 ELSE u_student_fee.amt_due 
+      END amt_due
+    , u_student_fee.amt_due orig_amt_due
+    , COALESCE( u_student_fee.amt_paid, 0 ) amt_paid
+    , CASE WHEN U_DEF_EXT_STUDENTS.BYOD = 1 
+      OR COALESCE( U_STUDENT_FEE.waived, 0 ) = 1 
+      THEN 0 ELSE u_student_fee.amount 
+      END amount
+    , u_student_fee.amount orig_amount
+    , u_student_fee.id u_student_fee_id
+    , SUM( CASE WHEN U_DEF_EXT_STUDENTS.BYOD = 1 
+      OR COALESCE( U_STUDENT_FEE.waived, 0 ) = 1 
+      THEN 0 ELSE u_student_fee.amount 
+      END ) OVER (PARTITION BY family_ident.familyID ORDER BY u_student_fee.amt_paid,
+			u_student_fee.amt_due DESC,
+			u_student_fee.id) AS running_total
+    , students.student_number
+    , u_student_fee.fee_name
+    , u_student_fee.notes
+    , U_DEF_EXT_STUDENTS.BYOD
+    , students.schoolid
+    , u_student_fee.waived
+  FROM students
+    INNER JOIN U_DEF_EXT_STUDENTS ON U_DEF_EXT_STUDENTS.STUDENTSDCID = students.dcid
+    INNER JOIN family_ident ON family_ident.person_id = students.person_id
+    
+    INNER JOIN this_family ON this_family.familyID = family_ident.familyID	
+      
+    INNER JOIN u_student_fee ON u_student_fee.studentsdcid = students.dcid
+      AND u_student_fee.fee_name = 'Computer Use'
+      AND u_student_fee.yearid = ~(curyearid)
+
+    LEFT JOIN U_STUDENT_DELETED_FEE ON U_STUDENT_DELETED_FEE.STUDENTSDCID = students.dcid
+      AND U_STUDENT_DELETED_FEE.YEARID = U_STUDENT_FEE.YEARID
+      AND U_STUDENT_DELETED_FEE.FEE_TYPE_ID = U_STUDENT_FEE.FEE_TYPE_ID
+    
+    LEFT JOIN u_student_fee prior_year_fee ON prior_year_fee.id = u_student_fee.original_fee_id
+    --INNER JOIN fee_type ON fee_type.id = fee.fee_type_id
+  
+  WHERE STUDENTS.ENROLL_STATUS IN ( 0 )
+    AND U_STUDENT_DELETED_FEE.studentsdcid IS NULL
+    AND prior_year_fee.id IS NULL
+    
+    --AND students.last_name = 'Tester'
+),
+family_fee_adjusted AS (
+  SELECT family_fee.familyID
+    , family_fee.student_number
+    , family_fee.u_student_fee_id
+    , family_fee.amount
+    , family_fee.orig_amount
+    , family_fee.amt_paid
+    , family_fee.amt_due
+    , family_fee.orig_amt_due
+    , family_fee.running_total
+    , ( ABS( family_fee.amount - CASE WHEN family_fee.running_total > 100 THEN family_fee.running_total - 100 ELSE 0 END ) 
+      + ( family_fee.amount - CASE WHEN family_fee.running_total > 100 THEN family_fee.running_total - 100 ELSE 0 END ) ) / 2 adjusted_amount
+    , family_fee.fee_name
+    , family_fee.notes
+    , family_fee.byod
+    , family_fee.schoolid
+    , family_fee.waived
+  FROM family_fee
+)
+
+SELECT family_fee_adjusted.familyid
+  , schools.abbreviation
+  , family_fee_adjusted.student_number
+  , students.dcid studentdcid
+  , students.lastfirst
+  
+  , family_fee_adjusted.amount
+  , CASE WHEN COALESCE( family_fee_adjusted.waived, 0 ) = 1 THEN 'Y' ELSE '' END waived
+  , family_fee_adjusted.amt_paid
+  , family_fee_adjusted.amt_due
+  , family_fee_adjusted.running_total
+  , CASE WHEN COALESCE( U_DEF_EXT_STUDENTS.byod, 0 ) = 1 THEN 'Y' ELSE '' END byod
+
+FROM family_fee_adjusted
+	INNER JOIN students ON students.student_number = family_fee_adjusted.student_number
+	INNER JOIN U_DEF_EXT_STUDENTS ON U_DEF_EXT_STUDENTS.STUDENTSDCID = students.dcid
+	INNER JOIN schools ON schools.school_number = students.schoolid
+
+ORDER BY family_fee_adjusted.amt_paid DESC, students.student_number
+]
+		<tr>
+			<td>~(familyid)</td>
+			<td>~(abbreviation)</td>
+			<td>~(student_number)</td>
+			<td><a href="/admin/students/fees-MBA.html?frn=001~(studentdcid)" target="_blank">~(lastfirst)</a></td>
+      <td>~(amount)</td>
+			<td>~(waived)</td>
+			<td>~(amt_paid)</td>
+			<td>~(amt_due)</td>
+			<td>~(running_total)</td>
+			<td>~(byod)</td>
+		</tr>
+
+[/tlist_sql]
+	</tbody>
+</table>
+
+<script type="text/javascript">
+	const byod = '~([STUDENTS.U_STUDENTS_EXTENSION]BYOD)';
+
+	if( byod == '1' ) {
+		$j( '#student_detail_header' ).prepend( '<span>BYOD</span>');
+	}
+
+	const family_computer_use_fee = document.getElementById( 'family_computer_use_fee' );
+	const nextYearFeesContainer = document.getElementById( 'nextYearFeesContainer' );
+
+	nextYearFeesContainer.parentNode.insertBefore( family_computer_use_fee, nextYearFeesContainer );
+
+	
+</script>
+
+<!-- END fees-MBA.te-mba-customizations.content.footer.txt -->
