@@ -1,6 +1,6 @@
 {
   "name": "te-mba-customizations",
-  "version": "23.10.2",
+  "version": "23.11.0",
   "description": "TESD MBA Customizations",
   "main": "index.js",
   "scripts": {

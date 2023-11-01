@@ -80,9 +80,7 @@ family_fee AS (
     , SUM( CASE WHEN U_DEF_EXT_STUDENTS.BYOD = 1 
       OR COALESCE( U_STUDENT_FEE.waived, 0 ) = 1 
       THEN 0 ELSE u_student_fee.amount 
-      END ) OVER (PARTITION BY family_ident.familyID ORDER BY u_student_fee.amt_paid, students.dob, 
-			u_student_fee.amt_due DESC,
-			u_student_fee.id) AS running_total
+      END ) OVER (PARTITION BY family_ident.familyID ORDER BY u_student_fee.amt_paid DESC, students.student_number) AS running_total
     , students.student_number
     , u_student_fee.fee_name
     , u_student_fee.notes
