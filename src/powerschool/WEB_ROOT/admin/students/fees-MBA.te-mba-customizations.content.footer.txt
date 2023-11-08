@@ -22,6 +22,10 @@
 		</tr>
 	</thead>
 	<tbody>
+<!--
+  Calculate the total computer use fees for the family of the selected student, capped at $100.
+  Families are determined by shared custodial contacts using the ISCUSTODIAL flag on STUDENTCONTACTDETAIL.
+-->
 ~[tlist_sql;
 WITH FamilyCTE AS (
     SELECT DISTINCT
