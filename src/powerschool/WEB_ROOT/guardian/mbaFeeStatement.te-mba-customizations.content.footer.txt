@@ -1,2 +1,0 @@
-<!-- START mbaFeeStatement.te-mba-customizations.content.footer.txt -->
-<!-- END mbaFeeStatement.te-mba-customizations.content.footer.txt -->

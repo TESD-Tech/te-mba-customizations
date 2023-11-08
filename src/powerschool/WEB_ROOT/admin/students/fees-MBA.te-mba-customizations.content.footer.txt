@@ -1,5 +1,4 @@
 <!-- BEGIN fees-MBA.te-mba-customizations.content.footer.txt -->
-
 <style type="text/css">
 	#family_computer_use_fee td {
 		text-align: center;
@@ -179,7 +178,5 @@ ORDER BY family_fee_adjusted.amt_paid DESC, students.student_number
 
 	nextYearFeesContainer.parentNode.insertBefore( family_computer_use_fee, nextYearFeesContainer );
 
-	
 </script>
-
 <!-- END fees-MBA.te-mba-customizations.content.footer.txt -->
