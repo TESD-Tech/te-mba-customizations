@@ -2,10 +2,11 @@
 <style type="text/css">
 	#family_computer_use_fee td {
 		text-align: center;
+    margin-top: 12px;
 	}
 </style>
 
-<table id="family_computer_use_fee" class="grid" style="margin-top: 12px;">
+<table id="family_computer_use_fee" class="grid">
 	<thead>
 		<tr>
 			<th>Family ID</th>
@@ -169,9 +170,8 @@ ORDER BY family_fee_adjusted.amt_paid DESC, students.student_number
 <script type="text/javascript">
 	const byod = '~([STUDENTS.U_STUDENTS_EXTENSION]BYOD)';
 
-	if( byod == '1' ) {
+	if( byod == '1' )
 		$j( '#student_detail_header' ).prepend( '<span>BYOD</span>');
-	}
 
 	const family_computer_use_fee = document.getElementById( 'family_computer_use_fee' );
 	const nextYearFeesContainer = document.getElementById( 'nextYearFeesContainer' );
