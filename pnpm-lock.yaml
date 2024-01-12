@@ -1,4 +1,4 @@
-lockfileVersion: '6.1'
+lockfileVersion: '6.0'
 
 settings:
   autoInstallPeers: true
@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@tesd-tech/ps-package':
-    specifier: ^23.9.29
-    version: 23.9.29
+    specifier: ^24.1.1
+    version: 24.1.1
 
 packages:
 
@@ -26,13 +26,13 @@ packages:
       regenerator-runtime: 0.13.11
     dev: false
 
-  /@tesd-tech/ps-package@23.9.29:
-    resolution: {integrity: sha512-q1LBUVhv6GgVZSGI3a8Ai+VwYn5wG4yP2xBW3AYngjDP9xfB+/6Y8aBw2a573spzvmpq61V9DX4tkXph42tNkw==}
+  /@tesd-tech/ps-package@24.1.1:
+    resolution: {integrity: sha512-q3HQLjN9QbXq2DDfeaXWG+cwGLk28WcOLfmkxQ4OQVUOkxXHdd1WfCjDRhIOiUylgxsNXvTuXQZP9KoVJuee8w==}
     hasBin: true
     dependencies:
       archiver: 6.0.1
       calver: 22.9.1
-      fs-extra: 11.1.1
+      fs-extra: 11.2.0
       minimist: 1.2.8
       xml2js: 0.6.2
     dev: false
@@ -128,8 +128,8 @@ packages:
     resolution: {integrity: sha512-/d9sfos4yxzpwkDkuN7k2SqFKtYNmCTzgfEpz82x34IM9/zc8KGxQoXg1liNC/izpRM/MBdt44Nmx41ZWqk+FQ==}
     dev: false
 
-  /fs-extra@11.1.1:
-    resolution: {integrity: sha512-MGIE4HOvQCeUCzmlHs0vXpih4ysz4wg9qiSAu6cd42lVwPbTM1TjV7RusoyQqMmk/95gdQZX72u+YW+c3eEpFQ==}
+  /fs-extra@11.2.0:
+    resolution: {integrity: sha512-PmDi3uwK5nFuXh7XDTlVnS17xJS7vW36is2+w3xcv8SVxiB4NyATf4ctkVY5bkSjX0Y4nbvZCq1/EjtEyr9ktw==}
     engines: {node: '>=14.14'}
     dependencies:
       graceful-fs: 4.2.11
