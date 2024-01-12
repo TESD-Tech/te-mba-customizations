@@ -109,7 +109,7 @@ family_fee AS (
     --INNER JOIN fee_type ON fee_type.id = fee.fee_type_id
   
   WHERE STUDENTS.ENROLL_STATUS IN ( 0 )
-    AND U_STUDENT_DELETED_FEE.studentsdcid IS NULL
+    -- AND U_STUDENT_DELETED_FEE.studentsdcid IS NULL
     AND prior_year_fee.id IS NULL
     
     --AND students.last_name = 'Tester'
