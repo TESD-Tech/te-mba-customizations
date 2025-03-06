@@ -2,9 +2,43 @@
 <style type="text/css">
 	#family_computer_use_fee td {
 		text-align: center;
-    margin-top: 12px;
+		margin-top: 12px;
 	}
 </style>
+
+
+<div id="email_dialog" title="Email Parent/Guardian" class="hidden" style="max-width: 1024px;">
+	<form id="tesd_form" class="" style="margin-bottom: 4px;"
+		action="~[if#guardianPortal.~[directory]=guardian]/guardian/changesrecorded.html[else#guardianPortal]/admin/changesrecorded.white.html?frn=~(frn)[/if#guardianPortal]"
+		method="POST">
+		<div style="" id="emailthis">
+			<input type="text" name="from" value="noreply@tesd.net" size=75 class="hidden">
+			To: <input type="text" name="mailto" value="" id="mailtoaddress" size=75>
+			Student DCID: <input type="text" name="studentsdcid" value="" id="email_dcid">
+			<span class="button" onclick="sendReminderEmail()" id="sendReminderEmail">Send</span>
+			<span class="email-status" id="emailStatus"></span>
+			<input type="text" name="subject" value="" size=35 class="hidden">
+			<input id="pt_embody" name="body" value='' class="hidden">
+			<input type="hidden" id="mailout" type="text" name="ac" value="mail">
+		</div>
+	</form>
+	<div contenteditable="true" class="box-round" style="padding: 12px;" id="email_body">
+		Dear Parent/Guardian,
+		<br><br>
+		Please complete the following forms via the <a href="https://powerschool.tesd.net" target="_blank">PowerSchool
+			Guardian Portal</a> to finalize your child's health information:
+		<br><br>
+		<div id="missing_forms"></div>
+		<br>
+		Your prompt action is greatly appreciated to ensure you meet the PA School Health Code and allow your child's participation in school.
+		<br><br>
+		If you have any questions, feel free to reach out to us at <a href="mailto:~[x:useremail]">~[x:useremail]</a>.
+		<br><br>
+		Kind Regards,
+		<br>
+		~[if#district.~(curschoolid)=0]T/E[else#district]~(schoolabbr)[/if#district] Health Department
+	</div>
+</div>
 
 <table id="family_computer_use_fee" class="grid">
 	<thead>
@@ -14,7 +48,7 @@
 			<th>Student Number</th>
 			<th>Student</th>
 			<th>Amount</th>
-      <th>Waived</th>
+			<th>Waived</th>
 			<th>Paid</th>
 			<th>Due</th>
 			<th>Running Total</th>
@@ -23,32 +57,32 @@
 	</thead>
 	<tbody>
 <!--
-  Calculate the total computer use fees for the family of the selected student, capped at $100.
-  Families are determined by shared custodial contacts using the ISCUSTODIAL flag on STUDENTCONTACTDETAIL.
+	Calculate the total computer use fees for the family of the selected student, capped at $100.
+	Families are determined by shared custodial contacts using the ISCUSTODIAL flag on STUDENTCONTACTDETAIL.
 -->
 ~[tlist_sql;
 WITH FamilyCTE AS (
-    SELECT DISTINCT
-        studentcontactassoc.PERSONID,
-        MIN(students.STUDENT_NUMBER) OVER (PARTITION BY studentcontactassoc.PERSONID) AS MinStudentNumber
-    FROM students
-	    INNER JOIN STUDENTCONTACTASSOC ON STUDENTCONTACTASSOC.STUDENTDCID = students.dcid
-	    INNER JOIN STUDENTCONTACTDETAIL ON STUDENTCONTACTDETAIL.STUDENTCONTACTASSOCID = STUDENTCONTACTASSOC.STUDENTCONTACTASSOCID
-	        AND STUDENTCONTACTDETAIL.ISCUSTODIAL = 1
-    WHERE students.schoolid < 5000
-        AND students.enroll_status IN (-1, 0)
+		SELECT DISTINCT
+				studentcontactassoc.PERSONID,
+				MIN(students.STUDENT_NUMBER) OVER (PARTITION BY studentcontactassoc.PERSONID) AS MinStudentNumber
+		FROM students
+			INNER JOIN STUDENTCONTACTASSOC ON STUDENTCONTACTASSOC.STUDENTDCID = students.dcid
+			INNER JOIN STUDENTCONTACTDETAIL ON STUDENTCONTACTDETAIL.STUDENTCONTACTASSOCID = STUDENTCONTACTASSOC.STUDENTCONTACTASSOCID
+					AND STUDENTCONTACTDETAIL.ISCUSTODIAL = 1
+		WHERE students.schoolid < 5000
+				AND students.enroll_status IN (-1, 0)
 ), familyIDs AS (
 	SELECT
-	    students.person_id,
-	    fcte.PERSONID,
-	    DENSE_RANK() OVER (ORDER BY fcte.MinStudentNumber) AS FAMILYID
+			students.person_id,
+			fcte.PERSONID,
+			DENSE_RANK() OVER (ORDER BY fcte.MinStudentNumber) AS FAMILYID
 	FROM students
 		INNER JOIN STUDENTCONTACTASSOC ON STUDENTCONTACTASSOC.STUDENTDCID = students.dcid
 		INNER JOIN STUDENTCONTACTDETAIL ON STUDENTCONTACTDETAIL.STUDENTCONTACTASSOCID = STUDENTCONTACTASSOC.STUDENTCONTACTASSOCID
-		    AND STUDENTCONTACTDETAIL.ISCUSTODIAL = 1
+				AND STUDENTCONTACTDETAIL.ISCUSTODIAL = 1
 		INNER JOIN FamilyCTE fcte ON studentcontactassoc.PERSONID = fcte.PERSONID
 	WHERE students.schoolid < 5000
-	    AND students.enroll_status IN (-1, 0)
+			AND students.enroll_status IN (-1, 0)
 	
 	ORDER BY students.STUDENT_NUMBER, fcte.personid
 ), family_ident AS (
@@ -68,84 +102,84 @@ this_family AS (
 			AND students.person_id = family_ident.person_id
 ),
 family_fee AS (
-  SELECT family_ident.familyID
-    , CASE WHEN U_DEF_EXT_STUDENTS.BYOD = 1 
-      OR COALESCE( U_STUDENT_FEE.waived, 0 ) = 1 
-      THEN 0 ELSE u_student_fee.amt_due 
-      END amt_due
-    , u_student_fee.amt_due orig_amt_due
-    , COALESCE( u_student_fee.amt_paid, 0 ) amt_paid
-    , CASE WHEN U_DEF_EXT_STUDENTS.BYOD = 1 
-      OR COALESCE( U_STUDENT_FEE.waived, 0 ) = 1 
-      THEN 0 ELSE u_student_fee.amount 
-      END amount
-    , u_student_fee.amount orig_amount
-    , u_student_fee.id u_student_fee_id
-    , SUM( CASE WHEN U_DEF_EXT_STUDENTS.BYOD = 1 
-      OR COALESCE( U_STUDENT_FEE.waived, 0 ) = 1 
-      THEN 0 ELSE u_student_fee.amount 
-      END ) OVER (PARTITION BY family_ident.familyID ORDER BY u_student_fee.amt_paid DESC, students.student_number) AS running_total
-    , students.student_number
-    , u_student_fee.fee_name
-    , u_student_fee.notes
-    , U_DEF_EXT_STUDENTS.BYOD
-    , students.schoolid
-    , u_student_fee.waived
-  FROM students
-    INNER JOIN U_DEF_EXT_STUDENTS ON U_DEF_EXT_STUDENTS.STUDENTSDCID = students.dcid
-    INNER JOIN family_ident ON family_ident.person_id = students.person_id
-    
-    INNER JOIN this_family ON this_family.familyID = family_ident.familyID	
-      
-    INNER JOIN u_student_fee ON u_student_fee.studentsdcid = students.dcid
-      AND u_student_fee.fee_name = 'Computer Use'
-      AND u_student_fee.yearid = ~(curyearid)
+	SELECT family_ident.familyID
+		, CASE WHEN U_DEF_EXT_STUDENTS.BYOD = 1 
+			OR COALESCE( U_STUDENT_FEE.waived, 0 ) = 1 
+			THEN 0 ELSE u_student_fee.amt_due 
+			END amt_due
+		, u_student_fee.amt_due orig_amt_due
+		, COALESCE( u_student_fee.amt_paid, 0 ) amt_paid
+		, CASE WHEN U_DEF_EXT_STUDENTS.BYOD = 1 
+			OR COALESCE( U_STUDENT_FEE.waived, 0 ) = 1 
+			THEN 0 ELSE u_student_fee.amount 
+			END amount
+		, u_student_fee.amount orig_amount
+		, u_student_fee.id u_student_fee_id
+		, SUM( CASE WHEN U_DEF_EXT_STUDENTS.BYOD = 1 
+			OR COALESCE( U_STUDENT_FEE.waived, 0 ) = 1 
+			THEN 0 ELSE u_student_fee.amount 
+			END ) OVER (PARTITION BY family_ident.familyID ORDER BY u_student_fee.amt_paid DESC, students.student_number) AS running_total
+		, students.student_number
+		, u_student_fee.fee_name
+		, u_student_fee.notes
+		, U_DEF_EXT_STUDENTS.BYOD
+		, students.schoolid
+		, u_student_fee.waived
+	FROM students
+		INNER JOIN U_DEF_EXT_STUDENTS ON U_DEF_EXT_STUDENTS.STUDENTSDCID = students.dcid
+		INNER JOIN family_ident ON family_ident.person_id = students.person_id
+		
+		INNER JOIN this_family ON this_family.familyID = family_ident.familyID	
+			
+		INNER JOIN u_student_fee ON u_student_fee.studentsdcid = students.dcid
+			AND u_student_fee.fee_name = 'Computer Use'
+			AND u_student_fee.yearid = ~(curyearid)
 
-    LEFT JOIN U_STUDENT_DELETED_FEE ON U_STUDENT_DELETED_FEE.STUDENTSDCID = students.dcid
-      AND U_STUDENT_DELETED_FEE.YEARID = U_STUDENT_FEE.YEARID
-      AND U_STUDENT_DELETED_FEE.FEE_TYPE_ID = U_STUDENT_FEE.FEE_TYPE_ID
-    
-    LEFT JOIN u_student_fee prior_year_fee ON prior_year_fee.id = u_student_fee.original_fee_id
-    --INNER JOIN fee_type ON fee_type.id = fee.fee_type_id
-  
-  WHERE STUDENTS.ENROLL_STATUS IN ( 0 )
-    -- AND U_STUDENT_DELETED_FEE.studentsdcid IS NULL
-    AND prior_year_fee.id IS NULL
-    
-    --AND students.last_name = 'Tester'
+		LEFT JOIN U_STUDENT_DELETED_FEE ON U_STUDENT_DELETED_FEE.STUDENTSDCID = students.dcid
+			AND U_STUDENT_DELETED_FEE.YEARID = U_STUDENT_FEE.YEARID
+			AND U_STUDENT_DELETED_FEE.FEE_TYPE_ID = U_STUDENT_FEE.FEE_TYPE_ID
+		
+		LEFT JOIN u_student_fee prior_year_fee ON prior_year_fee.id = u_student_fee.original_fee_id
+		--INNER JOIN fee_type ON fee_type.id = fee.fee_type_id
+	
+	WHERE STUDENTS.ENROLL_STATUS IN ( 0 )
+		-- AND U_STUDENT_DELETED_FEE.studentsdcid IS NULL
+		AND prior_year_fee.id IS NULL
+		
+		--AND students.last_name = 'Tester'
 ),
 family_fee_adjusted AS (
-  SELECT family_fee.familyID
-    , family_fee.student_number
-    , family_fee.u_student_fee_id
-    , family_fee.amount
-    , family_fee.orig_amount
-    , family_fee.amt_paid
-    , family_fee.amt_due
-    , family_fee.orig_amt_due
-    , family_fee.running_total
-    , ( ABS( family_fee.amount - CASE WHEN family_fee.running_total > 100 THEN family_fee.running_total - 100 ELSE 0 END ) 
-      + ( family_fee.amount - CASE WHEN family_fee.running_total > 100 THEN family_fee.running_total - 100 ELSE 0 END ) ) / 2 adjusted_amount
-    , family_fee.fee_name
-    , family_fee.notes
-    , family_fee.byod
-    , family_fee.schoolid
-    , family_fee.waived
-  FROM family_fee
+	SELECT family_fee.familyID
+		, family_fee.student_number
+		, family_fee.u_student_fee_id
+		, family_fee.amount
+		, family_fee.orig_amount
+		, family_fee.amt_paid
+		, family_fee.amt_due
+		, family_fee.orig_amt_due
+		, family_fee.running_total
+		, ( ABS( family_fee.amount - CASE WHEN family_fee.running_total > 100 THEN family_fee.running_total - 100 ELSE 0 END ) 
+			+ ( family_fee.amount - CASE WHEN family_fee.running_total > 100 THEN family_fee.running_total - 100 ELSE 0 END ) ) / 2 adjusted_amount
+		, family_fee.fee_name
+		, family_fee.notes
+		, family_fee.byod
+		, family_fee.schoolid
+		, family_fee.waived
+	FROM family_fee
 )
 
 SELECT family_fee_adjusted.familyid
-  , schools.abbreviation
-  , family_fee_adjusted.student_number
-  , students.dcid studentdcid
-  , students.lastfirst
-  
-  , family_fee_adjusted.amount
-  , CASE WHEN COALESCE( family_fee_adjusted.waived, 0 ) = 1 THEN 'Y' ELSE '' END waived
-  , family_fee_adjusted.amt_paid
-  , family_fee_adjusted.amt_due
-  , family_fee_adjusted.running_total
-  , CASE WHEN COALESCE( U_DEF_EXT_STUDENTS.byod, 0 ) = 1 THEN 'Y' ELSE '' END byod
+	, schools.abbreviation
+	, family_fee_adjusted.student_number
+	, students.dcid studentdcid
+	, students.lastfirst
+	
+	, family_fee_adjusted.amount
+	, CASE WHEN COALESCE( family_fee_adjusted.waived, 0 ) = 1 THEN 'Y' ELSE '' END waived
+	, family_fee_adjusted.amt_paid
+	, family_fee_adjusted.amt_due
+	, family_fee_adjusted.running_total
+	, CASE WHEN COALESCE( U_DEF_EXT_STUDENTS.byod, 0 ) = 1 THEN 'Y' ELSE '' END byod
 
 FROM family_fee_adjusted
 	INNER JOIN students ON students.student_number = family_fee_adjusted.student_number
@@ -159,7 +193,7 @@ ORDER BY family_fee_adjusted.amt_paid DESC, students.student_number
 			<td>~(abbreviation)</td>
 			<td>~(student_number)</td>
 			<td><a href="/admin/students/fees-MBA.html?frn=001~(studentdcid)" target="_blank">~(lastfirst)</a></td>
-      <td>~(amount)</td>
+			<td>~(amount)</td>
 			<td>~(waived)</td>
 			<td>~(amt_paid)</td>
 			<td>~(amt_due)</td>
