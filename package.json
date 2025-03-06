@@ -17,6 +17,6 @@
   },
   "homepage": "https://github.com/TESD-Tech/te-mba-customizations#readme",
   "dependencies": {
-    "@tesd-tech/ps-package": "^24.1.1"
+    "@tesd-tech/ps-package": "^24.11.9"
   }
 }
