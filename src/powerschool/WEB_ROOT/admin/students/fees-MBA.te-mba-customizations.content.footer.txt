@@ -15,28 +15,26 @@
 			<input type="text" name="from" value="noreply@tesd.net" size=75 class="hidden">
 			To: <input type="text" name="mailto" value="" id="mailtoaddress" size=75>
 			Student DCID: <input type="text" name="studentsdcid" value="" id="email_dcid">
-			<span class="button" onclick="sendReminderEmail()" id="sendReminderEmail">Send</span>
+			<span class="button" onclick="sendEmail()" id="sendReminderEmail">Send</span>
 			<span class="email-status" id="emailStatus"></span>
 			<input type="text" name="subject" value="" size=35 class="hidden">
 			<input id="pt_embody" name="body" value='' class="hidden">
 			<input type="hidden" id="mailout" type="text" name="ac" value="mail">
 		</div>
 	</form>
-	<div contenteditable="true" class="box-round" style="padding: 12px;" id="email_body">
-		Dear Parent/Guardian,
-		<br><br>
-		Please complete the following forms via the <a href="https://powerschool.tesd.net" target="_blank">PowerSchool
-			Guardian Portal</a> to finalize your child's health information:
-		<br><br>
-		<div id="missing_forms"></div>
-		<br>
-		Your prompt action is greatly appreciated to ensure you meet the PA School Health Code and allow your child's participation in school.
-		<br><br>
-		If you have any questions, feel free to reach out to us at <a href="mailto:~[x:useremail]">~[x:useremail]</a>.
-		<br><br>
-		Kind Regards,
-		<br>
-		~[if#district.~(curschoolid)=0]T/E[else#district]~(schoolabbr)[/if#district] Health Department
+	<div contenteditable="true" class="box-round" style="padding: 12px; font-family: sans-serif; line-height: 1.6; color: #333; border: 1px solid #ddd;" id="email_body">
+			<p>Dear Parent/Guardian,</p>
+
+			<p>This email is to inform you that we have used the warranty for your child for this school year, <span class="student-name">~(first_name) ~(last_name)</span>'s, school-issued laptop to address a recent issue. This service was covered under the existing warranty.</p>
+
+			<p>Please be aware that any <span style="font-style: italic;">further</span> repairs or replacements required for this laptop will <span style="font-style: italic;">no longer</span> be covered by the warranty and will involve a monetary charge. We encourage you to discuss proper care and handling of the device with <span class="student-name">~(first_name)</span> to minimize the risk of future damage.</p>
+
+			<p>We appreciate your understanding and cooperation in ensuring your child's device remains in good working condition.</p>
+
+			<p>If you have any questions regarding the laptop, please feel free to reach out to us at <a href="mailto:familyhelpdesk@tesd.net">familyhelpdesk@tesd.net</a>.</p>
+
+			<p style="margin-top: 2em;">Kind Regards,<br>
+			T/E School District IT Department</p>
 	</div>
 </div>
 
@@ -215,6 +213,55 @@ ORDER BY family_fee_adjusted.amt_paid DESC, students.student_number
 	const nextYearFeesContainer = document.getElementById( 'nextYearFeesContainer' );
 
 	nextYearFeesContainer.parentNode.insertBefore( family_computer_use_fee, nextYearFeesContainer );
+
+	// Append firstWarrantyEmail button after #accountBalanceContainer
+	const accountBalanceContainer = document.getElementById( 'accountBalanceContainer' );
+	const firstWarrantyEmail = document.createElement( 'button' )
+	// <button id="firstWarrantyEmail" style="margin-top: 8px;">Send First Warranty Email</button>
+	firstWarrantyEmail.id = 'firstWarrantyEmail';
+	firstWarrantyEmail.style.marginTop = '8px';
+	firstWarrantyEmail.textContent = 'Send First Warranty Email';
+	firstWarrantyEmail.onclick = function() {
+		showWarrantyEmailDialog( this );
+	}
+	accountBalanceContainer.parentNode.insertBefore( firstWarrantyEmail, accountBalanceContainer.nextSibling );
+
+	function showWarrantyEmailDialog(el) {
+		// Clear out the email dialog
+		$j('#missing_forms').html('')
+		$j('#emailStatus').html('')
+		// $j('#sendReminderEmail').removeClass('hidden')
+
+		const email = '~[tlist_sql;
+		SELECT LISTAGG(emailaddress.EMAILADDRESS, ', ') guardian_email
+		FROM students
+			INNER JOIN studentcontactassoc ON studentcontactassoc.studentdcid = students.dcid
+				INNER JOIN STUDENTCONTACTDETAIL ON STUDENTCONTACTDETAIL.STUDENTCONTACTASSOCID = STUDENTCONTACTASSOC.STUDENTCONTACTASSOCID
+						AND studentcontactdetail.ISCUSTODIAL = 1
+				INNER JOIN person ON person.id = studentcontactassoc.personid
+				INNER JOIN PERSONEMAILADDRESSASSOC ON PERSONEMAILADDRESSASSOC.PERSONID = person.id
+				INNER JOIN emailaddress ON emailaddress.emailaddressid = PERSONEMAILADDRESSASSOC.EMAILADDRESSID
+		WHERE students.STUDENT_NUMBER = ~(student_number)
+		GROUP BY students.STUDENT_NUMBER
+		;]~(guardian_email)[/tlist_sql]';
+
+		const thisRow = $j(el).closest('tr')
+
+		// const email = prompt("Email Address", `~[x: useremail]`)
+		$j('#mailtoaddress').val(email)
+
+
+		const studentsdcid = ~[tlist_sql;SELECT dcid FROM students WHERE student_number = ~(student_number);]~(dcid)[/tlist_sql];
+
+		$j('#email_dialog').dialog({ width: "500px;" })
+		$j('#email_dialog').removeClass('hidden')
+		$j('#email_dcid').val(studentsdcid)
+
+	}
+
+	function sendEmail() {
+		alert('The verbiage of this email is not finalized and this function is still under development. No email will be sent.')
+	}
 
 </script>
 <!-- END fees-MBA.te-mba-customizations.content.footer.txt -->
