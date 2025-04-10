@@ -33,6 +33,8 @@
 
 			<p>If you have any questions regarding the laptop, please feel free to reach out to us at <a href="mailto:familyhelpdesk@tesd.net">familyhelpdesk@tesd.net</a>.</p>
 
+			<p>More information regarding Repair Costs for District Laptops & iPads can be found here: <a href="https://www.tesd.net/repaircosts">https://www.tesd.net/repaircosts</a>.</p>
+
 			<p style="margin-top: 2em;">Kind Regards,<br>
 			T/E School District IT Department</p>
 	</div>
