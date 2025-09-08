@@ -23,20 +23,20 @@
 		</div>
 	</form>
 	<div contenteditable="true" class="box-round" style="padding: 12px; font-family: sans-serif; line-height: 1.6; color: #333; border: 1px solid #ddd;" id="email_body">
-			<p>Dear Parent/Guardian,</p>
+			<div>Dear Parent/Guardian,</div>
 
-			<p>This email is to inform you that we have used the warranty for your child for this school year, <span class="student-name">~(first_name) ~(last_name)</span>'s, school-issued laptop to address a recent issue. This service was covered under the existing warranty.</p>
+			<div>This email is to inform you that we have used the warranty for your child (<span class="student-name">~(first_name) ~(last_name)</span>) for this school year. A school-issued laptop to address a recent issue. This service was covered under the existing warranty.</div>
 
-			<p>Please be aware that any <span style="font-style: italic;">further</span> repairs or replacements required for this laptop will <span style="font-style: italic;">no longer</span> be covered by the warranty and will involve a monetary charge. We encourage you to discuss proper care and handling of the device with <span class="student-name">~(first_name)</span> to minimize the risk of future damage.</p>
+			<div>Please be aware that any <span style="font-style: italic;">further</span> repairs or replacements required for this laptop will <span style="font-style: italic;">no longer</span> be covered by the warranty and will involve a monetary charge. We encourage you to discuss proper care and handling of the device with <span class="student-name">~(first_name)</span> to minimize the risk of future damage.</div>
 
-			<p>We appreciate your understanding and cooperation in ensuring your child's device remains in good working condition.</p>
+			<div>We appreciate your understanding and cooperation in ensuring your child's device remains in good working condition.</div>
 
-			<p>If you have any questions regarding the laptop, please feel free to reach out to us at <a href="mailto:familyhelpdesk@tesd.net">familyhelpdesk@tesd.net</a>.</p>
+			<div>If you have any questions regarding the laptop, please feel free to reach out to us at <a href="mailto:familyhelpdesk@tesd.net">familyhelpdesk@tesd.net</a>.</div>
 
-			<p>More information regarding Repair Costs for District Laptops & iPads can be found here: <a href="https://www.tesd.net/repaircosts">https://www.tesd.net/repaircosts</a>.</p>
+			<div>More information regarding Repair Costs for District Laptops & iPads can be found here: <a href="https://www.tesd.net/repaircosts">https://www.tesd.net/repaircosts</a>.</div>
 
-			<p style="margin-top: 2em;">Kind Regards,<br>
-			T/E School District IT Department</p>
+			<div style="margin-top: 2em;">Kind Regards,<br>
+			T/E School District IT Department</div>
 	</div>
 </div>
 
@@ -262,7 +262,47 @@ ORDER BY family_fee_adjusted.amt_paid DESC, students.student_number
 	}
 
 	function sendEmail() {
-		alert('The verbiage of this email is not finalized and this function is still under development. No email will be sent.')
+
+
+		const data = {
+			"from": "noreply@tesd.net",
+			"mailto": document.getElementById('mailtoaddress').value,
+			"subject": "Important Information Regarding Your Child's Laptop Warranty",
+			"body": document.getElementById('email_body').innerHTML,
+			"ac": "mail"
+		};	
+		
+	  const XHR = new XMLHttpRequest();
+
+	  const urlEncodedDataPairs = [];
+
+	  // Turn the data object into an array of URL-encoded key/value pairs.
+	  for (const [name, value] of Object.entries(data)) {
+	    urlEncodedDataPairs.push(`${encodeURIComponent(name)}=${encodeURIComponent(value)}`);
+	  }
+
+	  // Combine the pairs into a single string and replace all %-encoded spaces to
+	  // the '+' character; matches the behavior of browser form submissions.
+	  const urlEncodedData = urlEncodedDataPairs.join('&').replace(/%20/g, '+');
+
+	  // Define what happens on successful data submission
+	  XHR.addEventListener('load', (event) => {
+	    alert('Email sent.');
+	  });
+
+	  // Define what happens in case of error
+	  XHR.addEventListener('error', (event) => {
+	    alert('Oops! Something went wrong.');
+	  });
+
+	  // Set up our request
+	  XHR.open('POST', '/admin/changesrecorded.white_nf.html');
+
+	  // Add the required HTTP header for form data POST requests
+	  XHR.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+	  // Finally, send our data.
+	  XHR.send(urlEncodedData);
 	}
 
 </script>
